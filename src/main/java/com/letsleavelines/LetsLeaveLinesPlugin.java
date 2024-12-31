@@ -1,55 +1,73 @@
 package com.letsleavelines;
 
-import com.google.inject.Provides;
-import javax.inject.Inject;
-import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
-import net.runelite.api.GameState;
-import net.runelite.api.events.GameStateChanged;
-import net.runelite.client.config.ConfigManager;
-import net.runelite.client.eventbus.Subscribe;
-import net.runelite.client.plugins.Plugin;
+import net.runelite.api.events.GameTick;
+import net.runelite.api.events.TilePaint;
+import net.runelite.api.events.ConfigChanged;
+import net.runelite.api.widgets.WidgetInfo;
+import net.runelite.api.widgets.Widget;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.plugins.PluginDescriptor;
+
+import javax.inject.Inject;
+import java.awt.*;
 
 @Slf4j
 @PluginDescriptor(
 		name = "LetsLeaveLines",
-		description = "A potentially fun game?",
-		tags = {"game", "lines", "friends", "trail", "event"}
+		description = "Colors all tiles your character moves on.",
+		tags = {"tiles", "color", "visual"}
 )
-public class LetsLeaveLinesPlugin extends Plugin
+public class TileColorPlugin extends Plugin
 {
-	@Inject
-	private Client client;
+	private final Client client;
+	private Color tileColor = Color.CYAN;
 
 	@Inject
-	private LetsLeaveLinesConfig config;
-
-	@Override
-	protected void startUp() throws Exception
+	private TileColorPlugin(Client client)
 	{
-		log.info("Example started!");
+		this.client = client;
 	}
 
 	@Override
-	protected void shutDown() throws Exception
+	protected void startUp()
 	{
-		log.info("Example stopped!");
+		log.info("TileColorPlugin started");
+	}
+
+	@Override
+	protected void shutDown()
+	{
+		log.info("TileColorPlugin stopped");
 	}
 
 	@Subscribe
-	public void onGameStateChanged(GameStateChanged gameStateChanged)
+	private void onGameTick(GameTick event)
 	{
-		if (gameStateChanged.getGameState() == GameState.LOGGED_IN)
+		// This event is used to keep the plugin active and color tiles
+	}
+
+	@Subscribe
+	private void onConfigChanged(ConfigChanged event)
+	{
+		if (event.getGroup().equals("tilecolor"))
 		{
-			client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Example says " + config.greeting(), null);
+			tileColor = new Color(client.getConfig(TileColorConfig.class).tileColor());
 		}
 	}
 
-	@Provides
-    LetsLeaveLinesConfig provideConfig(ConfigManager configManager)
+	@Subscribe
+	private void onTilePaint(TilePaint event)
 	{
-		return configManager.getConfig(LetsLeaveLinesConfig.class);
-	}
-}
+		if (event.getCanvas() != null)
+		{
+			for (Tile tile : client.getMapRegionsTiles())
+			{
+				if (tile != null && tile.getWorldLocation().isInScene())
+				{
+					if (tile.getWorldLocation().getPlane() == client.getPlane())
+					{
+						event.getCanvas().drawTile(tile.getLocalLocation(), tileColor, Perspective.HEIGHTmapElevation(tile), Perspective.LOCAL_HEIGHT, Perspective.LOCAL_HEIGHT);
+					}
+				}
+			}

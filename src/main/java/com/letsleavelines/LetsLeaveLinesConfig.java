@@ -4,16 +4,19 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 
-@ConfigGroup("example")
-public interface LetsLeaveLinesConfig extends Config
+import java.awt.Color;
+
+@ConfigGroup("tilecolor")
+public interface TileColorConfig extends Config
 {
 	@ConfigItem(
-		keyName = "greeting",
-		name = "Welcome Greeting",
-		description = "The message to show to the user when they login"
+			keyName = "tileColor",
+			name = "Tile Color",
+			description = "Choose the color for tiles",
+			position = 0
 	)
-	default String greeting()
+	default int tileColor()
 	{
-		return "Hello";
+		return Color.CYAN.getRGB(); // Default color
 	}
 }
